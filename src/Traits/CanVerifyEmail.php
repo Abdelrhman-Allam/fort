@@ -2,42 +2,32 @@
 
 declare(strict_types=1);
 
-namespace Rinvex\Fort\Traits;
-
-use Rinvex\Fort\Notifications\EmailVerificationNotification;
+namespace Rinvex\Auth\Traits;
 
 trait CanVerifyEmail
 {
     /**
-     * Get the email address where verification links are sent.
-     *
-     * @return string
+     * {@inheritdoc}
      */
-    public function getEmailForVerification()
+    public function getEmailForVerification(): string
     {
         return $this->email;
     }
 
     /**
-     * Determine if email is verified or not.
-     *
-     * @return bool
+     * {@inheritdoc}
      */
-    public function isEmailVerified()
+    public function hasVerifiedEmail(): bool
     {
-        return (bool) $this->email_verified;
+        return ! is_null($this->email_verified_at);
     }
 
     /**
-     * Send the email verification notification.
-     *
-     * @param string $token
-     * @param string $expiration
-     *
-     * @return void
+     * {@inheritdoc}
      */
-    public function sendEmailVerificationNotification($token, $expiration)
+    public function sendEmailVerificationNotification(string $token, int $expiration): void
     {
-        $this->notify(new EmailVerificationNotification($token, $expiration));
+        ! $this->emailVerificationNotificationClass
+        || $this->notify(new $this->emailVerificationNotificationClass($token, $expiration));
     }
 }

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Rinvex\Fort\Contracts;
+namespace Rinvex\Auth\Contracts;
 
 interface CanVerifyEmailContract
 {
@@ -11,22 +11,22 @@ interface CanVerifyEmailContract
      *
      * @return string
      */
-    public function getEmailForVerification();
+    public function getEmailForVerification(): string;
 
     /**
-     * Determine if email is verified or not.
+     * Determine if the user has verified their email address.
      *
      * @return bool
      */
-    public function isEmailVerified();
+    public function hasVerifiedEmail(): bool;
 
     /**
      * Send the email verification notification.
      *
      * @param string $token
-     * @param string $expiration
+     * @param int    $expiration
      *
      * @return void
      */
-    public function sendEmailVerificationNotification($token, $expiration);
+    public function sendEmailVerificationNotification(string $token, int $expiration): void;
 }

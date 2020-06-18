@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Rinvex\Fort\Services;
+namespace Rinvex\Auth\Services;
 
 use Closure;
 use Carbon\Carbon;
@@ -10,8 +10,8 @@ use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use UnexpectedValueException;
 use Illuminate\Contracts\Auth\UserProvider;
-use Rinvex\Fort\Contracts\CanVerifyEmailContract;
-use Rinvex\Fort\Contracts\EmailVerificationBrokerContract;
+use Rinvex\Auth\Contracts\CanVerifyEmailContract;
+use Rinvex\Auth\Contracts\EmailVerificationBrokerContract;
 
 class EmailVerificationBroker implements EmailVerificationBrokerContract
 {
@@ -53,7 +53,7 @@ class EmailVerificationBroker implements EmailVerificationBrokerContract
     /**
      * {@inheritdoc}
      */
-    public function sendVerificationLink(array $credentials)
+    public function sendVerificationLink(array $credentials): string
     {
         // First we will check to see if we found a user at the given credentials and
         // if we did not we will redirect back to this current URI with a piece of
@@ -86,16 +86,10 @@ class EmailVerificationBroker implements EmailVerificationBrokerContract
             return $user;
         }
 
-        // Fire the email verification start event
-        event('rinvex.fort.emailverification.start', [$user]);
-
         // Once the email has been verified, we'll call the given
         // callback, then we'll delete the token and return.
         // in their persistent storage.
         $callback($user);
-
-        // Fire the email verification success event
-        event('rinvex.fort.emailverification.success', [$user]);
 
         return static::EMAIL_VERIFIED;
     }
@@ -107,9 +101,9 @@ class EmailVerificationBroker implements EmailVerificationBrokerContract
      *
      * @throws \UnexpectedValueException
      *
-     * @return \Rinvex\Fort\Contracts\CanVerifyEmailContract
+     * @return \Rinvex\Auth\Contracts\CanVerifyEmailContract|null
      */
-    public function getUser(array $credentials)
+    public function getUser(array $credentials): ?CanVerifyEmailContract
     {
         $user = $this->users->retrieveByCredentials(Arr::only($credentials, ['email']));
 
@@ -123,12 +117,12 @@ class EmailVerificationBroker implements EmailVerificationBrokerContract
     /**
      * Create a new email verification token for the given user.
      *
-     * @param \Rinvex\Fort\Contracts\CanVerifyEmailContract $user
+     * @param \Rinvex\Auth\Contracts\CanVerifyEmailContract $user
      * @param int                                           $expiration
      *
      * @return string
      */
-    public function createToken(CanVerifyEmailContract $user, $expiration)
+    public function createToken(CanVerifyEmailContract $user, $expiration): string
     {
         $payload = $this->buildPayload($user, $user->getEmailForVerification(), $expiration);
 
@@ -138,12 +132,12 @@ class EmailVerificationBroker implements EmailVerificationBrokerContract
     /**
      * Validate the given email verification token.
      *
-     * @param \Rinvex\Fort\Contracts\CanVerifyEmailContract $user
+     * @param \Rinvex\Auth\Contracts\CanVerifyEmailContract $user
      * @param array                                         $credentials
      *
      * @return bool
      */
-    public function validateToken(CanVerifyEmailContract $user, array $credentials)
+    public function validateToken(CanVerifyEmailContract $user, array $credentials): bool
     {
         $payload = $this->buildPayload($user, $credentials['email'], $credentials['expiration']);
 
@@ -157,9 +151,9 @@ class EmailVerificationBroker implements EmailVerificationBrokerContract
      *
      * @return bool
      */
-    public function validateTimestamp($expiration)
+    public function validateTimestamp($expiration): bool
     {
-        return Carbon::createFromTimestamp($expiration)->isFuture();
+        return Carbon::now()->createFromTimestamp($expiration)->isFuture();
     }
 
     /**
@@ -167,7 +161,7 @@ class EmailVerificationBroker implements EmailVerificationBrokerContract
      *
      * @return string
      */
-    public function getKey()
+    public function getKey(): string
     {
         if (Str::startsWith($this->key, 'base64:')) {
             return base64_decode(mb_substr($this->key, 7));
@@ -179,13 +173,13 @@ class EmailVerificationBroker implements EmailVerificationBrokerContract
     /**
      * Returns the payload string containing.
      *
-     * @param \Rinvex\Fort\Contracts\CanVerifyEmailContract $user
+     * @param \Rinvex\Auth\Contracts\CanVerifyEmailContract $user
      * @param string                                        $email
      * @param int                                           $expiration
      *
      * @return string
      */
-    protected function buildPayload(CanVerifyEmailContract $user, $email, $expiration)
+    protected function buildPayload(CanVerifyEmailContract $user, $email, $expiration): string
     {
         return implode(';', [
             $email,
@@ -200,7 +194,7 @@ class EmailVerificationBroker implements EmailVerificationBrokerContract
      *
      * @param array $credentials
      *
-     * @return \Rinvex\Fort\Contracts\CanVerifyEmailContract|string
+     * @return \Rinvex\Auth\Contracts\CanVerifyEmailContract|string
      */
     protected function validateVerification(array $credentials)
     {
